@@ -1,0 +1,1074 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>وثّق — MVP v1.0.0</title>
+  <meta name="theme-color" content="#111827" />
+  <style>
+    :root {
+      --bg: #0b1020;
+      --panel: rgba(255,255,255,0.08);
+      --panel-strong: rgba(255,255,255,0.12);
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --line: rgba(255,255,255,0.14);
+      --accent: #22c55e;
+      --accent-2: #38bdf8;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --shadow: 0 20px 60px rgba(0,0,0,0.35);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; font-family: "Segoe UI", Tahoma, Arial, sans-serif; background: radial-gradient(circle at top, #18233f 0%, #0b1020 46%, #070b16 100%); color: var(--text); min-height: 100%; }
+    a { color: inherit; }
+    button, input { font: inherit; }
+    .app { max-width: 1180px; margin: 0 auto; padding: 22px; }
+    .topbar {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding: 16px 18px; border: 1px solid var(--line); background: var(--panel); border-radius: 18px; backdrop-filter: blur(14px);
+      box-shadow: var(--shadow);
+      margin-bottom: 18px;
+      position: sticky; top: 12px; z-index: 20;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand-badge {
+      width: 44px; height: 44px; display: grid; place-items: center; border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: #04111b; font-size: 22px; font-weight: 900;
+    }
+    .brand h1 { margin: 0; font-size: 20px; }
+    .brand small { color: var(--muted); display: block; margin-top: 4px; }
+    .meta-inline { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 999px;
+      background: rgba(255,255,255,0.08); border: 1px solid var(--line); color: var(--muted); font-size: 13px;
+    }
+    .chip.good { color: #d1fae5; border-color: rgba(34,197,94,0.3); background: rgba(34,197,94,0.12); }
+    .chip.warn { color: #fde68a; border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.12); }
+    .chip.bad { color: #fecaca; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.12); }
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    .hero {
+      display: grid; grid-template-columns: 1.15fr 0.85fr; gap: 18px;
+      margin-bottom: 18px;
+    }
+    .card {
+      background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; backdrop-filter: blur(16px); box-shadow: var(--shadow);
+    }
+    .title { margin: 0 0 8px; font-size: 28px; line-height: 1.3; }
+    .subtitle { margin: 0; color: var(--muted); line-height: 1.9; font-size: 15px; }
+
+    .feature-list { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 18px; }
+    .feature {
+      padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,0.04);
+    }
+    .feature strong { display: block; margin-bottom: 6px; }
+    .muted { color: var(--muted); }
+
+    .form-grid { display: grid; gap: 14px; margin-top: 18px; }
+    .label { display: block; margin-bottom: 6px; color: var(--muted); font-size: 13px; }
+    .input, .select {
+      width: 100%; padding: 14px 16px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.06); color: var(--text); outline: none;
+    }
+    .input:focus { border-color: rgba(56,189,248,0.65); box-shadow: 0 0 0 3px rgba(56,189,248,0.14); }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .row > * { flex: 1; min-width: 180px; }
+
+    .btn {
+      border: 0; border-radius: 16px; padding: 14px 18px; cursor: pointer; transition: 0.2s ease;
+      color: #071019; font-weight: 800; background: linear-gradient(135deg, #34d399, #38bdf8);
+      box-shadow: 0 14px 34px rgba(56,189,248,0.22);
+    }
+    .btn:hover { transform: translateY(-1px); filter: brightness(1.03); }
+    .btn:disabled { cursor: not-allowed; opacity: 0.55; transform: none; }
+    .btn.secondary {
+      background: rgba(255,255,255,0.08); color: var(--text); box-shadow: none; border: 1px solid var(--line);
+    }
+    .btn.warn { background: linear-gradient(135deg, #fbbf24, #fb7185); color: #1f1302; }
+    .btn.danger { background: linear-gradient(135deg, #fb7185, #ef4444); color: #fff; }
+
+    .capture-grid {
+      display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 18px;
+    }
+    .preview-frame {
+      width: 100%; aspect-ratio: 3 / 4; border-radius: 24px; overflow: hidden; background: rgba(255,255,255,0.04); border: 1px solid var(--line);
+      display: grid; place-items: center; position: relative;
+    }
+    video, .photo-preview {
+      width: 100%; height: 100%; object-fit: cover; display: block; background: #030712;
+    }
+    .camera-overlay {
+      position: absolute; inset: 0; pointer-events: none; display: flex; align-items: flex-end; justify-content: center;
+      padding: 14px;
+      background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.08) 60%, rgba(0,0,0,0.35) 100%);
+    }
+    .camera-hint {
+      background: rgba(0,0,0,0.34); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 8px 12px; color: #fff; font-size: 13px;
+      backdrop-filter: blur(10px);
+    }
+
+    .status-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px;
+    }
+    .status-box {
+      padding: 14px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,0.04); min-height: 92px;
+    }
+    .status-box .k { color: var(--muted); font-size: 12px; margin-bottom: 8px; display: block; }
+    .status-box .v { font-size: 15px; font-weight: 700; line-height: 1.6; }
+    .tiny { font-size: 12px; color: var(--muted); }
+
+    .stack { display: grid; gap: 12px; }
+    .divider { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.16), transparent); margin: 8px 0; }
+
+    .result-grid {
+      display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 18px;
+    }
+    .image-card {
+      border-radius: 24px; overflow: hidden; border: 1px solid var(--line); background: rgba(255,255,255,0.03);
+    }
+    .image-card img { width: 100%; display: block; }
+    .verify-status {
+      display: grid; gap: 10px; margin-top: 14px;
+    }
+    .verify-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 16px;
+      background: rgba(255,255,255,0.05); border: 1px solid var(--line);
+    }
+    .verify-item span:last-child { color: var(--muted); font-size: 13px; }
+    .score {
+      display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px;
+      padding: 16px 18px; border-radius: 18px; border: 1px solid rgba(34,197,94,0.28); background: rgba(34,197,94,0.1);
+    }
+    .score strong { font-size: 18px; }
+
+    .qr-wrap {
+      display: flex; justify-content: center; align-items: center; min-height: 180px; border: 1px dashed rgba(255,255,255,0.2); border-radius: 18px;
+      background: rgba(255,255,255,0.03);
+    }
+    .log-list { display: grid; gap: 10px; }
+    .log-item {
+      display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px; border-radius: 16px; border: 1px solid var(--line); background: rgba(255,255,255,0.04);
+    }
+    .log-item img { width: 70px; height: 70px; border-radius: 12px; object-fit: cover; border: 1px solid var(--line); }
+
+    .alert {
+      border-radius: 18px; padding: 14px 16px; border: 1px solid rgba(251,191,36,0.28); background: rgba(245,158,11,0.1); color: #fde68a; line-height: 1.8;
+    }
+    .alert.error { border-color: rgba(239,68,68,0.28); background: rgba(239,68,68,0.1); color: #fecaca; }
+    .footer-note {
+      margin-top: 16px; color: var(--muted); font-size: 12px; line-height: 1.8;
+    }
+    canvas.hidden-canvas { display: none; }
+
+    @media (max-width: 980px) {
+      .hero, .capture-grid, .result-grid { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 700px) {
+      .app { padding: 14px; }
+      .topbar { padding: 12px 14px; }
+      .title { font-size: 22px; }
+      .feature-list, .status-grid { grid-template-columns: 1fr; }
+      .brand h1 { font-size: 18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge">و</div>
+        <div>
+          <h1>وثّق</h1>
+          <small>نسخة HTML تجريبية — الإصدار 1.0.0 • آخر تحديث: 22 مارس 2026</small>
+        </div>
+      </div>
+      <div class="meta-inline">
+        <span class="chip good">هيبة وثقة</span>
+        <span class="chip">التقاط من داخل التطبيق</span>
+        <span class="chip">صفحة تحقق + QR</span>
+      </div>
+    </header>
+
+    <main id="homeScreen" class="screen active">
+      <section class="hero">
+        <div class="card">
+          <h2 class="title">توثيق الصورة في لحظة الالتقاط — بشكل واضح ومقنع</h2>
+          <p class="subtitle">
+            هذه نسخة MVP أمامية قابلة للتجربة بملف HTML واحد. تركيزها على تجربة <strong>توثيق الصورة</strong> عبر
+            التقاطها من داخل التطبيق، ربطها بالوقت والموقع، إنشاء صفحة تحقق، وتوليد صورة قابلة للتنزيل تحتوي على QR والبيانات الأساسية.
+          </p>
+
+          <div class="feature-list">
+            <div class="feature">
+              <strong>الخدمات المجانية المفعلة هنا</strong>
+              <div class="muted">تصوير من الكاميرا، تاريخ، وقت، إحداثيات، QR، صفحة تحقق، تنزيل الصورة بالبيانات، حفظ محلي لمدة 14 يوم، ومشاركة الرابط.</div>
+            </div>
+            <div class="feature">
+              <strong>نقطة الصراحة</strong>
+              <div class="muted">هذه النسخة تعمل محليًا داخل المتصفح. أي ميزات مثل توقيت السيرفر الحقيقي أو التوقيع الرقمي النهائي تحتاج Backend وربط استضافة.</div>
+            </div>
+            <div class="feature">
+              <strong>شرط الجودة</strong>
+              <div class="muted">لن يسمح بالالتقاط إلا عندما تصبح دقة الموقع 10 متر أو أقل، مع عرض الدقة بشكل واضح داخل التحقق.</div>
+            </div>
+            <div class="feature">
+              <strong>التغبيش على الوجوه</strong>
+              <div class="muted">متاح عند دعم المتصفح لـ FaceDetector. عند عدم الدعم تظهر لك الرسالة بوضوح بدون تعطيل بقية النظام.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3 style="margin-top:0">تسجيل دخول سريع</h3>
+          <p class="subtitle">بدون تعقيد. أدخل رقم الجوال للبدء في التقاط الصور من داخل النظام.</p>
+          <div class="form-grid">
+            <div>
+              <label class="label" for="phoneInput">رقم الجوال</label>
+              <input id="phoneInput" class="input" inputmode="tel" placeholder="05xxxxxxxx" maxlength="15" />
+            </div>
+            <div class="row">
+              <button id="loginBtn" class="btn">دخول وبدء التوثيق</button>
+              <button id="openVerifyFromLinkBtn" class="btn secondary">فتح صفحة تحقق من الرابط الحالي</button>
+            </div>
+            <div id="loginMsg" class="tiny">يتم حفظ الدخول محليًا داخل المتصفح في هذه النسخة التجريبية.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3 style="margin-top:0">السجل المحلي للصور الموثقة</h3>
+        <p class="subtitle">النسخة الحالية تحفظ السجل داخل المتصفح وتقوم بحذف الصور الأقدم من 14 يوم تلقائيًا عند التشغيل.</p>
+        <div class="divider"></div>
+        <div id="localLog" class="log-list"></div>
+      </section>
+    </main>
+
+    <main id="captureScreen" class="screen">
+      <section class="capture-grid">
+        <div class="card">
+          <div class="row" style="align-items:center; margin-bottom: 10px;">
+            <div>
+              <h2 style="margin:0">توثيق صورة جديدة</h2>
+              <div class="tiny">التقاط مباشر من الكاميرا فقط — بدون رفع من المعرض</div>
+            </div>
+            <div style="flex:0 0 auto; display:flex; gap:10px;">
+              <button id="backHomeBtn" class="btn secondary">الرجوع</button>
+            </div>
+          </div>
+
+          <div class="preview-frame">
+            <video id="camera" playsinline autoplay muted></video>
+            <img id="capturedPreview" class="photo-preview" style="display:none;" alt="المعاينة بعد الالتقاط" />
+            <div class="camera-overlay"><div id="cameraHint" class="camera-hint">جهّز الإطار ثم التقط الصورة</div></div>
+          </div>
+
+          <div class="row" style="margin-top: 14px;">
+            <button id="startCameraBtn" class="btn secondary">تشغيل الكاميرا</button>
+            <button id="refreshLocationBtn" class="btn secondary">تحديث الموقع</button>
+            <button id="blurFacesBtn" class="btn secondary">تغبيش الوجوه</button>
+            <button id="captureBtn" class="btn" disabled>التقاط الصورة</button>
+          </div>
+
+          <div id="captureAlert" class="alert" style="margin-top:14px; display:none"></div>
+
+          <div class="status-grid">
+            <div class="status-box">
+              <span class="k">دقة الموقع الحالية</span>
+              <div id="accuracyText" class="v">غير متاحة بعد</div>
+            </div>
+            <div class="status-box">
+              <span class="k">حالة الالتقاط</span>
+              <div id="captureStateText" class="v">بانتظار تشغيل الكاميرا والموقع</div>
+            </div>
+            <div class="status-box">
+              <span class="k">الإحداثيات</span>
+              <div id="coordsText" class="v">—</div>
+            </div>
+            <div class="status-box">
+              <span class="k">الوقت</span>
+              <div id="timeText" class="v">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <div>
+            <h3 style="margin:0 0 8px">ملاحظات الثقة في النسخة المجانية</h3>
+            <div class="verify-status">
+              <div class="verify-item"><strong>التقاط من داخل التطبيق</strong><span>مفعّل</span></div>
+              <div class="verify-item"><strong>منع المعرض</strong><span>مفعّل</span></div>
+              <div class="verify-item"><strong>شرط دقة الموقع ≤ 10م</strong><span>مفعّل</span></div>
+              <div class="verify-item"><strong>صفحة تحقق منفصلة</strong><span>مفعّل</span></div>
+              <div class="verify-item"><strong>تنزيل صورة عليها البيانات + QR</strong><span>مفعّل</span></div>
+              <div class="verify-item"><strong>حفظ 14 يوم</strong><span>محلي في هذه النسخة</span></div>
+            </div>
+          </div>
+
+          <div class="alert">
+            في هذه النسخة التجريبية لا يوجد سيرفر حقيقي داخل الملف، لذلك يتم استخدام التوقيت المحلي للجهاز وحفظ البيانات في <strong>localStorage</strong> فقط.
+            عند تحويل المشروع إلى نسخة إنتاجية سننقل الحفظ إلى السيرفر ونضيف التوقيت الموثق من الخادم والتوقيع الرقمي.
+          </div>
+
+          <div>
+            <h3 style="margin:0 0 8px">بعد الالتقاط</h3>
+            <p class="subtitle">سيتم إنشاء سجل تحقق برقم فريد وصورة جاهزة للتنزيل عليها التاريخ والوقت والإحداثيات وQR.</p>
+          </div>
+        </div>
+      </section>
+      <canvas id="workCanvas" class="hidden-canvas"></canvas>
+      <canvas id="qrCanvas" class="hidden-canvas"></canvas>
+    </main>
+
+    <main id="verifyScreen" class="screen">
+      <section class="result-grid">
+        <div class="card">
+          <div class="row" style="align-items:center; margin-bottom: 10px;">
+            <div>
+              <h2 style="margin:0">صفحة التحقق</h2>
+              <div class="tiny">عرض منظم للصورة وبياناتها وحالة التوثيق</div>
+            </div>
+            <div style="flex:0 0 auto; display:flex; gap:10px;">
+              <button id="backFromVerifyBtn" class="btn secondary">الرئيسية</button>
+            </div>
+          </div>
+
+          <div class="score">
+            <div>
+              <div class="tiny">مستوى الموثوقية</div>
+              <strong id="scoreTitle">—</strong>
+            </div>
+            <span id="scoreBadge" class="chip good">—</span>
+          </div>
+
+          <div class="image-card">
+            <img id="verifyImage" alt="الصورة الموثقة" />
+          </div>
+
+          <div class="verify-status">
+            <div class="verify-item"><strong>معرّف التوثيق</strong><span id="verifyId">—</span></div>
+            <div class="verify-item"><strong>التاريخ</strong><span id="verifyDate">—</span></div>
+            <div class="verify-item"><strong>الوقت</strong><span id="verifyTime">—</span></div>
+            <div class="verify-item"><strong>الإحداثيات</strong><span id="verifyCoords">—</span></div>
+            <div class="verify-item"><strong>دقة الموقع</strong><span id="verifyAccuracy">—</span></div>
+            <div class="verify-item"><strong>مدة الحفظ</strong><span>14 يوم</span></div>
+          </div>
+        </div>
+
+        <div class="card stack">
+          <div>
+            <h3 style="margin-top:0">حالة التوثيق</h3>
+            <div class="verify-status">
+              <div class="verify-item"><strong>التقاط من داخل التطبيق</strong><span id="vCapture">—</span></div>
+              <div class="verify-item"><strong>تم إنشاء صفحة تحقق</strong><span id="vPage">—</span></div>
+              <div class="verify-item"><strong>التعديل على الصورة</strong><span id="vTamper">—</span></div>
+              <div class="verify-item"><strong>التغبيش على الوجوه</strong><span id="vBlur">—</span></div>
+            </div>
+          </div>
+
+          <div>
+            <h3 style="margin:0 0 10px">QR للتحقق</h3>
+            <div id="verifyQr" class="qr-wrap"></div>
+          </div>
+
+          <div class="row">
+            <button id="shareVerifyBtn" class="btn">مشاركة الرابط</button>
+            <button id="copyVerifyBtn" class="btn secondary">نسخ الرابط</button>
+            <button id="downloadVerifyBtn" class="btn warn">تنزيل الصورة</button>
+            <button id="deleteVerifyBtn" class="btn danger">حذف السجل</button>
+          </div>
+
+          <div class="footer-note">
+            ملاحظة: هذه النسخة تعطي تجربة كاملة للـ MVP داخل HTML واحد. عند رفعها على دومين واستبدال التخزين المحلي بسيرفر، سيصبح رابط التحقق قابلاً للمشاركة العامة بين المستخدمين بشكل فعلي.
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    const STORAGE_KEY = 'wathiq_records_v1';
+    const SESSION_KEY = 'wathiq_session_v1';
+    const RETENTION_DAYS = 14;
+    const MAX_ACCURACY = 10;
+
+    const state = {
+      session: null,
+      stream: null,
+      location: null,
+      lastRecord: null,
+      faceBlurApplied: false,
+      isCaptured: false,
+      rawCapture: null,
+    };
+
+    const el = {
+      homeScreen: document.getElementById('homeScreen'),
+      captureScreen: document.getElementById('captureScreen'),
+      verifyScreen: document.getElementById('verifyScreen'),
+      phoneInput: document.getElementById('phoneInput'),
+      loginBtn: document.getElementById('loginBtn'),
+      loginMsg: document.getElementById('loginMsg'),
+      openVerifyFromLinkBtn: document.getElementById('openVerifyFromLinkBtn'),
+      localLog: document.getElementById('localLog'),
+
+      backHomeBtn: document.getElementById('backHomeBtn'),
+      backFromVerifyBtn: document.getElementById('backFromVerifyBtn'),
+      startCameraBtn: document.getElementById('startCameraBtn'),
+      refreshLocationBtn: document.getElementById('refreshLocationBtn'),
+      blurFacesBtn: document.getElementById('blurFacesBtn'),
+      captureBtn: document.getElementById('captureBtn'),
+      captureAlert: document.getElementById('captureAlert'),
+      camera: document.getElementById('camera'),
+      capturedPreview: document.getElementById('capturedPreview'),
+      cameraHint: document.getElementById('cameraHint'),
+      accuracyText: document.getElementById('accuracyText'),
+      captureStateText: document.getElementById('captureStateText'),
+      coordsText: document.getElementById('coordsText'),
+      timeText: document.getElementById('timeText'),
+      workCanvas: document.getElementById('workCanvas'),
+      qrCanvas: document.getElementById('qrCanvas'),
+
+      scoreTitle: document.getElementById('scoreTitle'),
+      scoreBadge: document.getElementById('scoreBadge'),
+      verifyImage: document.getElementById('verifyImage'),
+      verifyId: document.getElementById('verifyId'),
+      verifyDate: document.getElementById('verifyDate'),
+      verifyTime: document.getElementById('verifyTime'),
+      verifyCoords: document.getElementById('verifyCoords'),
+      verifyAccuracy: document.getElementById('verifyAccuracy'),
+      vCapture: document.getElementById('vCapture'),
+      vPage: document.getElementById('vPage'),
+      vTamper: document.getElementById('vTamper'),
+      vBlur: document.getElementById('vBlur'),
+      verifyQr: document.getElementById('verifyQr'),
+      shareVerifyBtn: document.getElementById('shareVerifyBtn'),
+      copyVerifyBtn: document.getElementById('copyVerifyBtn'),
+      downloadVerifyBtn: document.getElementById('downloadVerifyBtn'),
+      deleteVerifyBtn: document.getElementById('deleteVerifyBtn'),
+    };
+
+    function showScreen(name) {
+      [el.homeScreen, el.captureScreen, el.verifyScreen].forEach(s => s.classList.remove('active'));
+      el[name].classList.add('active');
+    }
+
+    function sanitizePhone(phone) {
+      return String(phone || '').replace(/[^0-9+]/g, '').trim();
+    }
+
+    function saveSession(session) {
+      localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+      state.session = session;
+    }
+
+    function loadSession() {
+      try {
+        const data = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+        if (data && data.phone) {
+          state.session = data;
+          el.phoneInput.value = data.phone;
+        }
+      } catch (_) {}
+    }
+
+    function loadRecords() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveRecords(records) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function cleanupOldRecords() {
+      const now = Date.now();
+      const maxAge = RETENTION_DAYS * 24 * 60 * 60 * 1000;
+      const filtered = loadRecords().filter(item => now - item.createdAtMs <= maxAge);
+      saveRecords(filtered);
+    }
+
+    function upsertRecord(record) {
+      const items = loadRecords();
+      const idx = items.findIndex(r => r.id === record.id);
+      if (idx >= 0) items[idx] = record; else items.unshift(record);
+      saveRecords(items);
+    }
+
+    function getRecord(id) {
+      return loadRecords().find(r => r.id === id) || null;
+    }
+
+    function deleteRecord(id) {
+      saveRecords(loadRecords().filter(r => r.id !== id));
+    }
+
+    function genId() {
+      return 'WQ-' + Math.random().toString(36).slice(2, 8).toUpperCase() + '-' + Date.now().toString().slice(-6);
+    }
+
+    function formatDate(ms) {
+      return new Intl.DateTimeFormat('ar-SA', { dateStyle: 'full' }).format(new Date(ms));
+    }
+
+    function formatTime(ms) {
+      return new Intl.DateTimeFormat('ar-SA', { timeStyle: 'medium' }).format(new Date(ms));
+    }
+
+    function formatCoord(n) {
+      return Number(n).toFixed(6);
+    }
+
+    function getVerifyUrl(id) {
+      const u = new URL(window.location.href);
+      u.searchParams.set('verify', id);
+      return u.toString();
+    }
+
+    function getHashForText(text) {
+      let h = 0;
+      for (let i = 0; i < text.length; i++) {
+        h = (h << 5) - h + text.charCodeAt(i);
+        h |= 0;
+      }
+      return 'H' + Math.abs(h).toString(16).toUpperCase();
+    }
+
+    function setAlert(message, type = 'warn') {
+      if (!message) {
+        el.captureAlert.style.display = 'none';
+        el.captureAlert.textContent = '';
+        el.captureAlert.className = 'alert';
+        return;
+      }
+      el.captureAlert.style.display = 'block';
+      el.captureAlert.textContent = message;
+      el.captureAlert.className = type === 'error' ? 'alert error' : 'alert';
+    }
+
+    function updateCaptureEligibility() {
+      const hasLocation = state.location && typeof state.location.accuracy === 'number';
+      const accurate = hasLocation && state.location.accuracy <= MAX_ACCURACY;
+      const cameraReady = !!state.stream;
+      el.captureBtn.disabled = !(accurate && cameraReady);
+
+      if (!cameraReady) {
+        el.captureStateText.textContent = 'شغّل الكاميرا أولًا';
+      } else if (!hasLocation) {
+        el.captureStateText.textContent = 'بانتظار تحديد الموقع';
+      } else if (!accurate) {
+        el.captureStateText.textContent = 'دقة الموقع أعلى من 10 متر';
+      } else {
+        el.captureStateText.textContent = 'جاهز للالتقاط';
+      }
+    }
+
+    async function startCamera() {
+      try {
+        if (state.stream) return;
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 1600 } },
+          audio: false,
+        });
+        state.stream = stream;
+        el.camera.srcObject = stream;
+        el.camera.play();
+        el.cameraHint.textContent = 'الكاميرا تعمل — بانتظار دقة موقع مناسبة';
+        updateCaptureEligibility();
+      } catch (err) {
+        setAlert('تعذر تشغيل الكاميرا. تأكد من منح الصلاحية للمتصفح.', 'error');
+      }
+    }
+
+    function stopCamera() {
+      if (state.stream) {
+        state.stream.getTracks().forEach(t => t.stop());
+        state.stream = null;
+      }
+      el.camera.srcObject = null;
+      updateCaptureEligibility();
+    }
+
+    async function refreshLocation() {
+      if (!navigator.geolocation) {
+        setAlert('المتصفح لا يدعم تحديد الموقع الجغرافي.', 'error');
+        return;
+      }
+
+      el.accuracyText.textContent = 'جاري التحديث...';
+      setAlert('جاري الحصول على موقعك بدقة مناسبة...');
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          state.location = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+          };
+
+          const a = Math.round(position.coords.accuracy || 0);
+          el.accuracyText.textContent = `± ${a} متر`;
+          el.coordsText.textContent = `${formatCoord(position.coords.latitude)} , ${formatCoord(position.coords.longitude)}`;
+          el.timeText.textContent = formatTime(position.timestamp);
+
+          if (a <= MAX_ACCURACY) {
+            setAlert('تم الحصول على موقع بدقة مناسبة، يمكنك الالتقاط الآن.');
+            el.cameraHint.textContent = 'الدقة مناسبة — التقط الصورة';
+          } else {
+            setAlert('تم تحديد الموقع ولكن الدقة ما زالت أعلى من 10 متر. حاول الوقوف في مكان مفتوح ثم حدّث الموقع.');
+            el.cameraHint.textContent = 'بانتظار دقة موقع أفضل من 10 متر';
+          }
+          updateCaptureEligibility();
+        },
+        err => {
+          setAlert('تعذر الحصول على الموقع. فعّل خدمة الموقع واسمح للمتصفح بالوصول إليها.', 'error');
+          el.accuracyText.textContent = 'فشل الحصول على الموقع';
+          updateCaptureEligibility();
+        },
+        { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
+      );
+    }
+
+    function drawRoundedRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    async function capturePhoto() {
+      if (!state.stream || !state.location || state.location.accuracy > MAX_ACCURACY) {
+        setAlert('لا يمكن الالتقاط قبل تشغيل الكاميرا والحصول على موقع بدقة 10 متر أو أقل.', 'error');
+        return;
+      }
+
+      const video = el.camera;
+      const canvas = el.workCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.width = video.videoWidth || 1080;
+      canvas.height = video.videoHeight || 1440;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      const rawDataUrl = canvas.toDataURL('image/jpeg', 0.92);
+      state.rawCapture = rawDataUrl;
+      state.isCaptured = true;
+      state.faceBlurApplied = false;
+      el.capturedPreview.src = rawDataUrl;
+      el.capturedPreview.style.display = 'block';
+      el.camera.style.display = 'none';
+      el.cameraHint.textContent = 'تم التقاط الصورة — يمكنك التغبيش ثم الحفظ';
+
+      const saved = await finalizeCapture(rawDataUrl, false);
+      state.lastRecord = saved;
+      renderVerify(saved.id);
+      showScreen('verifyScreen');
+      stopCamera();
+      renderLocalLog();
+    }
+
+    async function blurFacesOnCurrentCapture() {
+      if (!state.rawCapture) {
+        setAlert('التغبيش متاح بعد التقاط الصورة فقط.', 'error');
+        return;
+      }
+      if (!('FaceDetector' in window)) {
+        setAlert('المتصفح الحالي لا يدعم FaceDetector. بقية النظام تعمل بشكل طبيعي، لكن تغبيش الوجوه يحتاج متصفحًا داعمًا.', 'error');
+        return;
+      }
+
+      const img = await loadImage(state.rawCapture);
+      const canvas = el.workCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx.drawImage(img, 0, 0);
+
+      try {
+        const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 20 });
+        const faces = await detector.detect(img);
+        if (!faces.length) {
+          setAlert('لم يتم اكتشاف وجوه في الصورة الحالية.');
+          return;
+        }
+
+        for (const face of faces) {
+          const { x, y, width, height } = face.boundingBox;
+          pixelate(ctx, x, y, width, height, 14);
+        }
+        const blurredData = canvas.toDataURL('image/jpeg', 0.92);
+        state.rawCapture = blurredData;
+        state.faceBlurApplied = true;
+        el.capturedPreview.src = blurredData;
+
+        const saved = await finalizeCapture(blurredData, true);
+        state.lastRecord = saved;
+        renderVerify(saved.id);
+        showScreen('verifyScreen');
+        renderLocalLog();
+        setAlert('تم تغبيش الوجوه وتحديث السجل بنجاح.');
+      } catch (err) {
+        setAlert('حدثت مشكلة أثناء تغبيش الوجوه.', 'error');
+      }
+    }
+
+    function pixelate(ctx, x, y, width, height, blockSize) {
+      const sx = Math.max(0, Math.floor(x));
+      const sy = Math.max(0, Math.floor(y));
+      const sw = Math.min(ctx.canvas.width - sx, Math.ceil(width));
+      const sh = Math.min(ctx.canvas.height - sy, Math.ceil(height));
+      const imageData = ctx.getImageData(sx, sy, sw, sh);
+      const { data } = imageData;
+
+      for (let yy = 0; yy < sh; yy += blockSize) {
+        for (let xx = 0; xx < sw; xx += blockSize) {
+          let r = 0, g = 0, b = 0, count = 0;
+          for (let by = 0; by < blockSize && yy + by < sh; by++) {
+            for (let bx = 0; bx < blockSize && xx + bx < sw; bx++) {
+              const idx = ((yy + by) * sw + (xx + bx)) * 4;
+              r += data[idx]; g += data[idx + 1]; b += data[idx + 2]; count++;
+            }
+          }
+          r = Math.round(r / count); g = Math.round(g / count); b = Math.round(b / count);
+          for (let by = 0; by < blockSize && yy + by < sh; by++) {
+            for (let bx = 0; bx < blockSize && xx + bx < sw; bx++) {
+              const idx = ((yy + by) * sw + (xx + bx)) * 4;
+              data[idx] = r; data[idx + 1] = g; data[idx + 2] = b;
+            }
+          }
+        }
+      }
+      ctx.putImageData(imageData, sx, sy);
+    }
+
+    async function finalizeCapture(imageDataUrl, blurApplied) {
+      const createdAtMs = Date.now();
+      const id = state.lastRecord && state.isCaptured ? state.lastRecord.id : genId();
+      const verifyUrl = getVerifyUrl(id);
+      const coords = `${formatCoord(state.location.lat)}, ${formatCoord(state.location.lng)}`;
+      const stampHash = getHashForText(`${id}|${coords}|${createdAtMs}|${blurApplied}`);
+      const stampedDataUrl = await buildStampedImage(imageDataUrl, {
+        id,
+        date: formatDate(createdAtMs),
+        time: formatTime(createdAtMs),
+        lat: state.location.lat,
+        lng: state.location.lng,
+        accuracy: state.location.accuracy,
+        hash: stampHash,
+        verifyUrl,
+      });
+
+      const record = {
+        id,
+        userPhone: state.session?.phone || '',
+        createdAtMs,
+        dateLabel: formatDate(createdAtMs),
+        timeLabel: formatTime(createdAtMs),
+        lat: state.location.lat,
+        lng: state.location.lng,
+        accuracy: state.location.accuracy,
+        verifyUrl,
+        captureFromApp: true,
+        pageCreated: true,
+        blurApplied,
+        hash: stampHash,
+        originalImage: imageDataUrl,
+        stampedImage: stampedDataUrl,
+      };
+      upsertRecord(record);
+      return record;
+    }
+
+    async function buildStampedImage(imageDataUrl, meta) {
+      const img = await loadImage(imageDataUrl);
+      const qrDataUrl = await createQrDataUrl(meta.verifyUrl, 220);
+      const qrImg = await loadImage(qrDataUrl);
+
+      const panelHeight = Math.max(240, Math.round(img.height * 0.22));
+      const canvas = el.workCanvas;
+      const ctx = canvas.getContext('2d');
+      canvas.width = img.width;
+      canvas.height = img.height + panelHeight;
+
+      ctx.fillStyle = '#08101f';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, img.width, img.height);
+
+      const y = img.height;
+      const pad = Math.round(img.width * 0.035);
+      ctx.fillStyle = '#0d172a';
+      ctx.fillRect(0, y, canvas.width, panelHeight);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `700 ${Math.max(26, Math.round(img.width * 0.03))}px Segoe UI`;
+      ctx.fillText('وثّق — صورة موثقة', pad, y + pad + 12);
+
+      ctx.fillStyle = '#cbd5e1';
+      ctx.font = `500 ${Math.max(19, Math.round(img.width * 0.02))}px Segoe UI`;
+      const lines = [
+        `التاريخ: ${meta.date}`,
+        `الوقت: ${meta.time}`,
+        `الإحداثيات: ${formatCoord(meta.lat)} , ${formatCoord(meta.lng)}`,
+        `دقة الموقع: ± ${Math.round(meta.accuracy)} متر`,
+        `المعرّف: ${meta.id}`,
+      ];
+      lines.forEach((line, i) => {
+        ctx.fillText(line, pad, y + pad + 54 + i * 34);
+      });
+
+      drawRoundedRect(ctx, canvas.width - pad - 210, y + pad, 210, 210, 26);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+      ctx.drawImage(qrImg, canvas.width - pad - 190, y + pad + 20, 170, 170);
+
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = `500 ${Math.max(16, Math.round(img.width * 0.017))}px Segoe UI`;
+      ctx.fillText(`بصمة: ${meta.hash}`, pad, canvas.height - 18);
+
+      return canvas.toDataURL('image/jpeg', 0.94);
+    }
+
+    function createQrDataUrl(text, size = 220) {
+      return new Promise(resolve => {
+        el.qrCanvas.width = size;
+        el.qrCanvas.height = size;
+        el.qrCanvas.getContext('2d').clearRect(0, 0, size, size);
+        const holder = document.createElement('div');
+        new QRCode(holder, {
+          text,
+          width: size,
+          height: size,
+          colorDark: '#000000',
+          colorLight: '#ffffff',
+          correctLevel: QRCode.CorrectLevel.M,
+        });
+        const img = holder.querySelector('img');
+        if (img) {
+          img.onload = () => resolve(img.src);
+          if (img.complete) resolve(img.src);
+        } else {
+          const c = holder.querySelector('canvas');
+          resolve(c.toDataURL('image/png'));
+        }
+      });
+    }
+
+    function loadImage(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
+      });
+    }
+
+    function renderLocalLog() {
+      const items = loadRecords();
+      if (!items.length) {
+        el.localLog.innerHTML = '<div class="tiny">لا توجد سجلات محفوظة بعد.</div>';
+        return;
+      }
+      el.localLog.innerHTML = items.map(item => `
+        <div class="log-item">
+          <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+            <img src="${item.stampedImage}" alt="${item.id}" />
+            <div style="min-width:0;">
+              <div style="font-weight:700; margin-bottom:6px;">${item.id}</div>
+              <div class="tiny">${item.dateLabel} — ${item.timeLabel}</div>
+              <div class="tiny">± ${Math.round(item.accuracy)} متر</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn secondary" onclick="renderVerify('${item.id}')">فتح التحقق</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function computeScore(record) {
+      let score = 60;
+      if (record.captureFromApp) score += 15;
+      if (record.pageCreated) score += 10;
+      if (record.accuracy <= 10) score += 15;
+      if (record.blurApplied) score += 0;
+      if (score >= 90) return { title: 'عالية جدًا', badge: 'موثوقية مرتفعة', cls: 'good' };
+      if (score >= 75) return { title: 'عالية', badge: 'موثوقية جيدة', cls: 'good' };
+      if (score >= 60) return { title: 'متوسطة', badge: 'بحاجة تحقق إضافي', cls: 'warn' };
+      return { title: 'منخفضة', badge: 'تحقق محدود', cls: 'bad' };
+    }
+
+    function renderVerify(id) {
+      const record = getRecord(id);
+      if (!record) {
+        alert('تعذر العثور على السجل المطلوب.');
+        showScreen('homeScreen');
+        return;
+      }
+      state.lastRecord = record;
+      showScreen('verifyScreen');
+
+      const score = computeScore(record);
+      el.scoreTitle.textContent = score.title;
+      el.scoreBadge.textContent = score.badge;
+      el.scoreBadge.className = `chip ${score.cls}`;
+      el.verifyImage.src = record.stampedImage;
+      el.verifyId.textContent = record.id;
+      el.verifyDate.textContent = record.dateLabel;
+      el.verifyTime.textContent = record.timeLabel;
+      el.verifyCoords.textContent = `${formatCoord(record.lat)} , ${formatCoord(record.lng)}`;
+      el.verifyAccuracy.textContent = `± ${Math.round(record.accuracy)} متر`;
+      el.vCapture.textContent = record.captureFromApp ? 'نعم' : 'غير مؤكد';
+      el.vPage.textContent = record.pageCreated ? 'نعم' : 'لا';
+      el.vTamper.textContent = record.hash ? 'لا يوجد مؤشر تعديل على النسخة المحفوظة' : 'غير متاح';
+      el.vBlur.textContent = record.blurApplied ? 'تم تطبيق التغبيش' : 'غير مطبق';
+
+      el.verifyQr.innerHTML = '';
+      new QRCode(el.verifyQr, {
+        text: record.verifyUrl,
+        width: 180,
+        height: 180,
+        colorDark: '#000000',
+        colorLight: '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M,
+      });
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('verify', record.id);
+      history.replaceState({}, '', url.toString());
+    }
+
+    async function copyText(text) {
+      await navigator.clipboard.writeText(text);
+    }
+
+    async function shareCurrentRecord() {
+      if (!state.lastRecord) return;
+      const shareData = {
+        title: 'رابط تحقق صورة موثقة',
+        text: `تحقق من الصورة الموثقة برقم ${state.lastRecord.id}`,
+        url: state.lastRecord.verifyUrl,
+      };
+      if (navigator.share) {
+        try { await navigator.share(shareData); return; } catch (_) {}
+      }
+      await copyText(state.lastRecord.verifyUrl);
+      alert('تم نسخ رابط التحقق.');
+    }
+
+    function downloadDataUrl(dataUrl, filename) {
+      const a = document.createElement('a');
+      a.href = dataUrl;
+      a.download = filename;
+      a.click();
+    }
+
+    function resetCaptureUI() {
+      el.capturedPreview.style.display = 'none';
+      el.capturedPreview.src = '';
+      el.camera.style.display = 'block';
+      el.cameraHint.textContent = 'جهّز الإطار ثم التقط الصورة';
+      state.rawCapture = null;
+      state.faceBlurApplied = false;
+      state.isCaptured = false;
+      setAlert('');
+    }
+
+    function parseVerifyFromUrl() {
+      const u = new URL(window.location.href);
+      return u.searchParams.get('verify');
+    }
+
+    function initEvents() {
+      el.loginBtn.addEventListener('click', () => {
+        const phone = sanitizePhone(el.phoneInput.value);
+        if (!phone || phone.length < 8) {
+          el.loginMsg.textContent = 'أدخل رقم جوال صحيح للبدء.';
+          return;
+        }
+        saveSession({ phone, loginAt: Date.now() });
+        el.loginMsg.textContent = 'تم الحفظ محليًا، انتقل الآن إلى شاشة التوثيق.';
+        showScreen('captureScreen');
+        resetCaptureUI();
+        startCamera();
+        refreshLocation();
+      });
+
+      el.openVerifyFromLinkBtn.addEventListener('click', () => {
+        const id = parseVerifyFromUrl();
+        if (!id) {
+          alert('لا يوجد معرّف تحقق في الرابط الحالي.');
+          return;
+        }
+        renderVerify(id);
+      });
+
+      el.backHomeBtn.addEventListener('click', () => {
+        stopCamera();
+        showScreen('homeScreen');
+        renderLocalLog();
+      });
+
+      el.backFromVerifyBtn.addEventListener('click', () => {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('verify');
+        history.replaceState({}, '', url.toString());
+        showScreen('homeScreen');
+        renderLocalLog();
+      });
+
+      el.startCameraBtn.addEventListener('click', startCamera);
+      el.refreshLocationBtn.addEventListener('click', refreshLocation);
+      el.captureBtn.addEventListener('click', capturePhoto);
+      el.blurFacesBtn.addEventListener('click', blurFacesOnCurrentCapture);
+      el.shareVerifyBtn.addEventListener('click', shareCurrentRecord);
+      el.copyVerifyBtn.addEventListener('click', async () => {
+        if (!state.lastRecord) return;
+        await copyText(state.lastRecord.verifyUrl);
+        alert('تم نسخ الرابط.');
+      });
+      el.downloadVerifyBtn.addEventListener('click', () => {
+        if (!state.lastRecord) return;
+        downloadDataUrl(state.lastRecord.stampedImage, `${state.lastRecord.id}.jpg`);
+      });
+      el.deleteVerifyBtn.addEventListener('click', () => {
+        if (!state.lastRecord) return;
+        if (!confirm('هل تريد حذف هذا السجل من النسخة المحلية؟')) return;
+        deleteRecord(state.lastRecord.id);
+        const url = new URL(window.location.href);
+        url.searchParams.delete('verify');
+        history.replaceState({}, '', url.toString());
+        state.lastRecord = null;
+        showScreen('homeScreen');
+        renderLocalLog();
+      });
+    }
+
+    function boot() {
+      cleanupOldRecords();
+      loadSession();
+      renderLocalLog();
+      initEvents();
+
+      const verifyId = parseVerifyFromUrl();
+      if (verifyId) {
+        renderVerify(verifyId);
+      }
+    }
+
+    window.renderVerify = renderVerify;
+    window.addEventListener('beforeunload', stopCamera);
+    boot();
+  </script>
+</body>
+</html>
