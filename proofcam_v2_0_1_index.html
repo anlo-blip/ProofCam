@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ProofCam v2.0.1</title>
+  <meta name="description" content="ProofCam - Photo verification with time, location, QR, and cloud-backed verification." />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #121922;
+      --panel-2: #17202b;
+      --text: #eef4ff;
+      --muted: #9eb0c6;
+      --primary: #20c997;
+      --primary-2: #12b886;
+      --danger: #ff6b6b;
+      --warning: #ffd43b;
+      --border: rgba(255,255,255,.08);
+      --shadow: 0 12px 40px rgba(0,0,0,.35);
+      --radius: 20px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: linear-gradient(180deg, #0b0f14, #0f1620); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Tahoma, Arial, sans-serif; }
+    a { color: #8bdcff; text-decoration: none; }
+    .container { width: min(980px, calc(100% - 24px)); margin: 24px auto 48px; }
+    .header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .logo { width: 48px; height: 48px; border-radius: 16px; background: linear-gradient(135deg, #1ce1a1, #148f6a); display:flex; align-items:center; justify-content:center; font-weight:800; color:#08110e; box-shadow: var(--shadow); }
+    .brand h1 { margin: 0; font-size: 1.45rem; }
+    .brand p { margin: 4px 0 0; color: var(--muted); font-size: .95rem; }
+    .card { background: rgba(18,25,34,.92); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 18px; backdrop-filter: blur(10px); }
+    .grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: 18px; }
+    .stack { display: grid; gap: 14px; }
+    .hidden { display: none !important; }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; }
+    label { display: block; font-size: .95rem; margin-bottom: 6px; color: var(--muted); }
+    input, button, select, textarea {
+      font: inherit;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      outline: none;
+    }
+    input[type="text"], input[type="tel"] {
+      width: 100%; padding: 14px 15px; background: var(--panel-2); color: var(--text);
+    }
+    .btn {
+      padding: 13px 16px; background: var(--panel-2); color: var(--text); cursor: pointer; transition: .2s ease; min-height: 48px;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: linear-gradient(135deg, var(--primary), var(--primary-2)); color: #06110d; font-weight: 800; }
+    .btn-danger { background: linear-gradient(135deg, #ff8787, #fa5252); color: #1a0707; font-weight: 800; }
+    .btn-ghost { background: transparent; }
+    .btn[disabled] { opacity: .55; cursor: not-allowed; transform: none; }
+    .toolbar { display: flex; gap: 10px; flex-wrap: wrap; }
+    .video-wrap, .preview-wrap { position: relative; overflow: hidden; border-radius: 18px; background: #06090d; border:1px solid var(--border); }
+    video, .preview-img { display:block; width:100%; aspect-ratio: 3/4; object-fit: cover; background:#05080d; }
+    .badge { display:inline-flex; align-items:center; gap:8px; border-radius:999px; padding:8px 12px; background:#0d141d; border:1px solid var(--border); color:var(--muted); font-size:.92rem; }
+    .status-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap:10px; }
+    .metric { background: #0d141d; border:1px solid var(--border); border-radius: 16px; padding: 14px; }
+    .metric .k { color: var(--muted); font-size:.88rem; margin-bottom:6px; }
+    .metric .v { font-weight:700; word-break: break-word; }
+    .hint { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+    .alert { border-radius: 16px; padding: 14px 16px; border: 1px solid var(--border); }
+    .alert.ok { background: rgba(32,201,151,.1); color: #bef8e5; border-color: rgba(32,201,151,.22); }
+    .alert.warn { background: rgba(255,212,59,.08); color: #ffec99; border-color: rgba(255,212,59,.22); }
+    .alert.err { background: rgba(255,107,107,.1); color: #ffc9c9; border-color: rgba(255,107,107,.22); }
+    .sep { height: 1px; background: var(--border); margin: 6px 0; }
+    .footer-note { margin-top: 14px; color: var(--muted); font-size: .85rem; line-height: 1.7; }
+    .switch { display:flex; align-items:center; justify-content:space-between; gap:12px; background:#0d141d; border:1px solid var(--border); border-radius:16px; padding:12px 14px; }
+    .switch input { width: 18px; height: 18px; }
+    .verify-wrap img { width:100%; border-radius:16px; border:1px solid var(--border); }
+    .qr-box { display:flex; align-items:center; justify-content:center; background:#fff; border-radius:16px; padding:10px; width:max-content; margin:auto; }
+    .subtle { color: var(--muted); font-size: .84rem; }
+    .center { text-align:center; }
+    .pill { display:inline-block; padding:7px 10px; border-radius:999px; background:#0f1722; border:1px solid var(--border); }
+    canvas#stampCanvas { width:100%; display:none; border-radius:16px; }
+    .small { font-size:.84rem; }
+    @media (max-width: 860px) {
+      .grid { grid-template-columns: 1fr; }
+      .status-grid { grid-template-columns: 1fr; }
+      .header { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="brand">
+        <div class="logo">P</div>
+        <div>
+          <h1>ProofCam <span class="pill small">v2.0.0</span></h1>
+          <p>توثيق صورة برابط تحقق حقيقي مدعوم بالسحابة</p>
+        </div>
+      </div>
+      <div class="badge" id="modeBadge">وضع الالتقاط</div>
+    </div>
+
+    <section id="captureView" class="grid hidden">
+      <div class="stack">
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <h3 style="margin:0 0 6px;">الدخول السريع</h3>
+              <div class="hint">نسخة مجانية مبسطة. يتم حفظ رقم الجوال محليًا على نفس الجهاز فقط.</div>
+            </div>
+            <button class="btn btn-ghost" id="logoutBtn">تسجيل خروج</button>
+          </div>
+          <div class="sep"></div>
+          <div class="row">
+            <div style="flex:1 1 260px;">
+              <label>رقم الجوال</label>
+              <input id="phoneDisplay" type="tel" disabled />
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row" style="justify-content:space-between; align-items:center;">
+            <div>
+              <h3 style="margin:0 0 6px;">الكاميرا</h3>
+              <div class="hint">التقاط مباشر من داخل التطبيق فقط. لا يوجد رفع من المعرض.</div>
+            </div>
+            <span class="badge" id="geoBadge">الموقع غير مفعل</span>
+          </div>
+          <div class="video-wrap" style="margin-top:14px;">
+            <video id="video" autoplay playsinline muted></video>
+          </div>
+          <div class="toolbar" style="margin-top:14px;">
+            <button class="btn btn-primary" id="startCamBtn">تشغيل الكاميرا</button>
+            <button class="btn" id="refreshLocationBtn">تحديث الموقع</button>
+            <button class="btn" id="captureBtn" disabled>التقاط الصورة</button>
+          </div>
+          <div class="footer-note">
+            لن يتم السماح بالالتقاط إلا عندما تكون دقة الموقع <strong>10 متر أو أقل</strong>.
+          </div>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="card">
+          <h3 style="margin-top:0;">حالة التوثيق</h3>
+          <div class="status-grid">
+            <div class="metric"><div class="k">الوقت</div><div class="v" id="timeStatus">—</div></div>
+            <div class="metric"><div class="k">الإحداثيات</div><div class="v" id="coordsStatus">—</div></div>
+            <div class="metric"><div class="k">دقة الموقع</div><div class="v" id="accuracyStatus">—</div></div>
+            <div class="metric"><div class="k">حالة الالتقاط</div><div class="v" id="captureStatus">جاهز</div></div>
+          </div>
+          <div class="switch" style="margin-top:12px;">
+            <div>
+              <div style="font-weight:700;">تغبيش الوجوه</div>
+              <div class="subtle">يعمل عند دعم المتصفح لميزة Face Detection.</div>
+            </div>
+            <input id="blurFaces" type="checkbox" />
+          </div>
+        </div>
+
+        <div class="card preview-wrap">
+          <h3 style="margin-top:0; padding:0 0 12px;">المعاينة</h3>
+          <img id="previewImg" class="preview-img hidden" alt="Preview" />
+          <canvas id="processingCanvas" class="hidden"></canvas>
+          <canvas id="stampCanvas"></canvas>
+          <div id="previewEmpty" class="hint center" style="padding:30px 12px 18px;">بعد الالتقاط ستظهر هنا المعاينة المختومة مع بيانات التوثيق وQR.</div>
+        </div>
+
+        <div class="card hidden" id="resultCard">
+          <h3 style="margin-top:0;">نتيجة التوثيق</h3>
+          <div id="resultAlert" class="alert ok">تم تجهيز الصورة.</div>
+          <div class="row" style="margin-top:12px;">
+            <button class="btn btn-primary" id="shareLinkBtn">مشاركة الرابط</button>
+            <button class="btn" id="copyLinkBtn">نسخ الرابط</button>
+            <button class="btn" id="downloadBtn">تنزيل الصورة</button>
+          </div>
+          <div class="footer-note" id="resultLinkText"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="loginView" class="card hidden" style="max-width:560px; margin:0 auto;">
+      <h2 style="margin-top:0;">ابدأ خلال ثوانٍ</h2>
+      <p class="hint">هذه النسخة المجانية تستخدم رقم الجوال كدخول مبسط على نفس الجهاز، بدون تحقق SMS حقيقي.</p>
+      <label>رقم الجوال</label>
+      <input id="phoneInput" type="tel" placeholder="05xxxxxxxx" maxlength="20" />
+      <div class="row" style="margin-top:12px;">
+        <button class="btn btn-primary" id="savePhoneBtn">دخول</button>
+      </div>
+      <div class="footer-note">في النسخة الاحترافية يمكن استبدال ذلك بتسجيل دخول فعلي عبر OTP أو رقم موظف.</div>
+    </section>
+
+    <section id="verifyView" class="grid hidden">
+      <div class="stack">
+        <div class="card verify-wrap">
+          <h2 style="margin-top:0;">صفحة التحقق</h2>
+          <img id="verifyImage" alt="Verified Capture" />
+          <div class="row" style="margin-top:12px;">
+            <button class="btn" id="verifyDownloadBtn">تنزيل الصورة</button>
+            <button class="btn btn-primary" id="verifyShareBtn">مشاركة الرابط</button>
+          </div>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="card">
+          <div id="verifyAlert" class="alert ok">تم تحميل سجل التحقق بنجاح.</div>
+          <div class="status-grid" style="margin-top:12px;">
+            <div class="metric"><div class="k">درجة الموثوقية</div><div class="v" id="trustScore">—</div></div>
+            <div class="metric"><div class="k">وقت الخادم</div><div class="v" id="serverTime">—</div></div>
+            <div class="metric"><div class="k">وقت الجهاز</div><div class="v" id="deviceTime">—</div></div>
+            <div class="metric"><div class="k">رقم السجل</div><div class="v" id="recordId">—</div></div>
+            <div class="metric"><div class="k">الإحداثيات</div><div class="v" id="verifyCoords">—</div></div>
+            <div class="metric"><div class="k">دقة الموقع</div><div class="v" id="verifyAccuracy">—</div></div>
+          </div>
+        </div>
+        <div class="card center">
+          <h3 style="margin-top:0;">QR</h3>
+          <div class="qr-box"><canvas id="verifyQr"></canvas></div>
+          <div class="footer-note">هذا الرمز يعيد فتح صفحة التحقق نفسها.</div>
+        </div>
+        <div class="card">
+          <h3 style="margin-top:0;">حالة السجل</h3>
+          <div id="checkList" class="stack">
+            <div class="alert ok">✅ تم الرفع إلى الخادم.</div>
+            <div class="alert ok">✅ تم إنشاء رابط تحقق عام.</div>
+            <div class="alert ok">✅ تم حفظ الوقت والموقع والدقة.</div>
+            <div class="alert warn">⚠️ هذه النسخة لا تقدم حماية قانونية أو توقيعًا رقميًا متقدمًا.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const APP_VERSION = '2.0.1';
+    const LAST_UPDATED = '2026-03-22 (QR fix)';
+    const SUPABASE_URL = 'https://lzdfxfvxzttldhnghcib.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_cj-hTggobVsh9QllL6jHeA_7V9oLehh';
+    const BUCKET = 'proof-images';
+    const TABLE = 'captures';
+    const MAX_ACCURACY = 10;
+    const RETENTION_DAYS = 14;
+
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    const els = {
+      loginView: document.getElementById('loginView'),
+      captureView: document.getElementById('captureView'),
+      verifyView: document.getElementById('verifyView'),
+      modeBadge: document.getElementById('modeBadge'),
+      phoneInput: document.getElementById('phoneInput'),
+      savePhoneBtn: document.getElementById('savePhoneBtn'),
+      phoneDisplay: document.getElementById('phoneDisplay'),
+      logoutBtn: document.getElementById('logoutBtn'),
+      startCamBtn: document.getElementById('startCamBtn'),
+      refreshLocationBtn: document.getElementById('refreshLocationBtn'),
+      captureBtn: document.getElementById('captureBtn'),
+      video: document.getElementById('video'),
+      timeStatus: document.getElementById('timeStatus'),
+      coordsStatus: document.getElementById('coordsStatus'),
+      accuracyStatus: document.getElementById('accuracyStatus'),
+      captureStatus: document.getElementById('captureStatus'),
+      geoBadge: document.getElementById('geoBadge'),
+      blurFaces: document.getElementById('blurFaces'),
+      processingCanvas: document.getElementById('processingCanvas'),
+      stampCanvas: document.getElementById('stampCanvas'),
+      previewImg: document.getElementById('previewImg'),
+      previewEmpty: document.getElementById('previewEmpty'),
+      resultCard: document.getElementById('resultCard'),
+      resultAlert: document.getElementById('resultAlert'),
+      resultLinkText: document.getElementById('resultLinkText'),
+      shareLinkBtn: document.getElementById('shareLinkBtn'),
+      copyLinkBtn: document.getElementById('copyLinkBtn'),
+      downloadBtn: document.getElementById('downloadBtn'),
+      verifyImage: document.getElementById('verifyImage'),
+      verifyAlert: document.getElementById('verifyAlert'),
+      trustScore: document.getElementById('trustScore'),
+      serverTime: document.getElementById('serverTime'),
+      deviceTime: document.getElementById('deviceTime'),
+      recordId: document.getElementById('recordId'),
+      verifyCoords: document.getElementById('verifyCoords'),
+      verifyAccuracy: document.getElementById('verifyAccuracy'),
+      verifyQr: document.getElementById('verifyQr'),
+      verifyDownloadBtn: document.getElementById('verifyDownloadBtn'),
+      verifyShareBtn: document.getElementById('verifyShareBtn')
+    };
+
+    let stream = null;
+    let currentLocation = null;
+    let latestVerificationUrl = '';
+    let latestStampedBlob = null;
+    let latestStampedFileName = '';
+    let latestCaptureRecord = null;
+
+
+    async function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const s = document.createElement("script");
+        s.src = src;
+        s.async = true;
+        s.onload = resolve;
+        s.onerror = () => reject(new Error(`تعذر تحميل المكتبة: ${src}`));
+        document.head.appendChild(s);
+      });
+    }
+
+    async function ensureQRCodeLib() {
+      if (window.QRCode && typeof window.QRCode.toCanvas === 'function') return window.QRCode;
+      const sources = [
+        'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js',
+        'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js'
+      ];
+      let lastError = null;
+      for (const src of sources) {
+        try {
+          await loadScript(src);
+          if (window.QRCode && typeof window.QRCode.toCanvas === 'function') return window.QRCode;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+      throw lastError || new Error('تعذر تهيئة مكتبة QR.');
+    }
+
+    async function drawQrToCanvas(canvas, text, size = 180) {
+      const qr = await ensureQRCodeLib();
+      await qr.toCanvas(canvas, text, { width: size, margin: 1 });
+    }
+
+    function fmtDate(value) {
+      try {
+        return new Date(value).toLocaleString('ar-SA', { dateStyle: 'medium', timeStyle: 'medium' });
+      } catch {
+        return value || '—';
+      }
+    }
+
+    function show(view) {
+      els.loginView.classList.add('hidden');
+      els.captureView.classList.add('hidden');
+      els.verifyView.classList.add('hidden');
+      view.classList.remove('hidden');
+    }
+
+    function getSavedPhone() {
+      return localStorage.getItem('proofcam_phone') || '';
+    }
+
+    function savePhone(phone) {
+      localStorage.setItem('proofcam_phone', phone);
+    }
+
+    function clearPhone() {
+      localStorage.removeItem('proofcam_phone');
+    }
+
+    function setStatus(message, type = 'ok') {
+      els.resultCard.classList.remove('hidden');
+      els.resultAlert.className = `alert ${type}`;
+      els.resultAlert.textContent = message;
+    }
+
+    function setCaptureStatus(message) {
+      els.captureStatus.textContent = message;
+    }
+
+    function updateTimeStatus() {
+      const now = new Date();
+      els.timeStatus.textContent = fmtDate(now.toISOString());
+    }
+
+    function updateGeoUi() {
+      if (!currentLocation) {
+        els.coordsStatus.textContent = '—';
+        els.accuracyStatus.textContent = '—';
+        els.geoBadge.textContent = 'الموقع غير مفعل';
+        els.captureBtn.disabled = true;
+        return;
+      }
+      const { lat, lng, accuracy } = currentLocation;
+      els.coordsStatus.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+      els.accuracyStatus.textContent = `±${Math.round(accuracy)} متر`;
+      if (accuracy <= MAX_ACCURACY) {
+        els.geoBadge.textContent = `الدقة ممتازة ±${Math.round(accuracy)}م`;
+        els.captureBtn.disabled = false;
+      } else {
+        els.geoBadge.textContent = `الدقة ضعيفة ±${Math.round(accuracy)}م`;
+        els.captureBtn.disabled = true;
+      }
+    }
+
+    async function getAccurateLocation() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+          reject(new Error('الموقع الجغرافي غير مدعوم في هذا المتصفح.'));
+          return;
+        }
+
+        let settled = false;
+        let best = null;
+        const start = Date.now();
+
+        const watchId = navigator.geolocation.watchPosition(
+          pos => {
+            const coords = pos.coords;
+            const candidate = {
+              lat: coords.latitude,
+              lng: coords.longitude,
+              accuracy: coords.accuracy
+            };
+            if (!best || candidate.accuracy < best.accuracy) best = candidate;
+
+            currentLocation = best;
+            updateGeoUi();
+
+            if (candidate.accuracy <= MAX_ACCURACY && !settled) {
+              settled = true;
+              navigator.geolocation.clearWatch(watchId);
+              resolve(best);
+            }
+
+            if (Date.now() - start > 12000 && !settled) {
+              settled = true;
+              navigator.geolocation.clearWatch(watchId);
+              if (best) resolve(best);
+              else reject(new Error('تعذر الحصول على موقع مناسب.'));
+            }
+          },
+          err => {
+            if (!settled) {
+              settled = true;
+              navigator.geolocation.clearWatch(watchId);
+              reject(err);
+            }
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 12000
+          }
+        );
+      });
+    }
+
+    async function startCamera() {
+      if (stream) {
+        stream.getTracks().forEach(t => t.stop());
+      }
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 1700 } },
+        audio: false
+      });
+      els.video.srcObject = stream;
+      setCaptureStatus('الكاميرا تعمل');
+    }
+
+    async function blurFacesOnCanvas(canvas, ctx) {
+      if (!els.blurFaces.checked) return;
+      if (!('FaceDetector' in window)) return;
+      try {
+        const detector = new FaceDetector({ fastMode: true, maxDetectedFaces: 10 });
+        const faces = await detector.detect(canvas);
+        for (const face of faces) {
+          const box = face.boundingBox;
+          const x = Math.max(0, box.x), y = Math.max(0, box.y), w = Math.max(1, box.width), h = Math.max(1, box.height);
+          const temp = document.createElement('canvas');
+          temp.width = Math.max(1, Math.floor(w / 8));
+          temp.height = Math.max(1, Math.floor(h / 8));
+          const tctx = temp.getContext('2d');
+          tctx.drawImage(canvas, x, y, w, h, 0, 0, temp.width, temp.height);
+          ctx.imageSmoothingEnabled = false;
+          ctx.drawImage(temp, 0, 0, temp.width, temp.height, x, y, w, h);
+          ctx.imageSmoothingEnabled = true;
+        }
+      } catch (_) {
+        // ignore face detection failures silently
+      }
+    }
+
+    async function canvasToBlob(canvas, quality = 0.92) {
+      return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+    }
+
+    async function createStampedImage(sourceCanvas, meta, verifyUrl) {
+      const qrCanvas = document.createElement('canvas');
+      await drawQrToCanvas(qrCanvas, verifyUrl, 180);
+
+      const stampCanvas = els.stampCanvas;
+      const w = sourceCanvas.width;
+      const h = sourceCanvas.height;
+      const footer = Math.max(260, Math.round(w * 0.22));
+      stampCanvas.width = w;
+      stampCanvas.height = h + footer;
+      const ctx = stampCanvas.getContext('2d');
+
+      ctx.fillStyle = '#0b1118';
+      ctx.fillRect(0, 0, stampCanvas.width, stampCanvas.height);
+      ctx.drawImage(sourceCanvas, 0, 0);
+
+      ctx.fillStyle = '#0f1722';
+      ctx.fillRect(0, h, w, footer);
+      ctx.strokeStyle = 'rgba(255,255,255,.08)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(0, h + 1);
+      ctx.lineTo(w, h + 1);
+      ctx.stroke();
+
+      ctx.fillStyle = '#eef4ff';
+      ctx.font = `bold ${Math.max(26, Math.round(w * 0.035))}px Arial`;
+      ctx.fillText('ProofCam', 28, h + 42);
+      ctx.font = `${Math.max(18, Math.round(w * 0.022))}px Arial`;
+      ctx.fillStyle = '#a9b9cc';
+      ctx.fillText(`Version ${APP_VERSION} • Updated ${LAST_UPDATED}`, 28, h + 72);
+
+      ctx.fillStyle = '#eef4ff';
+      ctx.font = `${Math.max(20, Math.round(w * 0.023))}px Arial`;
+      const lines = [
+        `التاريخ: ${meta.date}`,
+        `الوقت: ${meta.time}`,
+        `الإحداثيات: ${meta.lat.toFixed(6)}, ${meta.lng.toFixed(6)}`,
+        `دقة الموقع: ±${Math.round(meta.accuracy)} متر`,
+        `وقت الخادم: ${meta.serverTime}`,
+        `السجل: ${meta.recordId}`
+      ];
+      let y = h + 110;
+      for (const line of lines) {
+        ctx.fillText(line, 28, y);
+        y += 34;
+      }
+
+      const qrSize = Math.min(180, Math.round(w * 0.24));
+      ctx.fillStyle = '#ffffff';
+      const qrX = w - qrSize - 26;
+      const qrY = h + 26;
+      ctx.fillRect(qrX - 8, qrY - 8, qrSize + 16, qrSize + 16);
+      ctx.drawImage(qrCanvas, qrX, qrY, qrSize, qrSize);
+      ctx.fillStyle = '#a9b9cc';
+      ctx.font = `${Math.max(16, Math.round(w * 0.018))}px Arial`;
+      ctx.fillText('Scan to verify', qrX - 10, qrY + qrSize + 30);
+
+      stampCanvas.style.display = 'block';
+      const blob = await canvasToBlob(stampCanvas, 0.94);
+      return { blob, canvas: stampCanvas };
+    }
+
+    async function sha256(blob) {
+      const buffer = await blob.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+      return [...new Uint8Array(hashBuffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function computeTrust(accuracy) {
+      if (accuracy <= 5) return 'عالية جدًا 🟢';
+      if (accuracy <= 10) return 'عالية 🟢';
+      if (accuracy <= 20) return 'متوسطة 🟡';
+      return 'منخفضة 🔴';
+    }
+
+    async function purgeOldRecords() {
+      const cutoff = new Date(Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000).toISOString();
+      try {
+        const { data, error } = await sb.from(TABLE).select('id,image_path').lt('server_time', cutoff);
+        if (error || !data || !data.length) return;
+        const paths = data.map(x => x.image_path).filter(Boolean);
+        if (paths.length) await sb.storage.from(BUCKET).remove(paths);
+        await sb.from(TABLE).delete().lt('server_time', cutoff);
+      } catch (_) {
+        // best effort only
+      }
+    }
+
+    async function captureFlow() {
+      try {
+        if (!stream) throw new Error('شغل الكاميرا أولاً.');
+        if (!currentLocation) throw new Error('فعّل الموقع أولاً.');
+        if (currentLocation.accuracy > MAX_ACCURACY) throw new Error('دقة الموقع أكبر من 10 متر. حاول مرة أخرى.');
+
+        setCaptureStatus('جارٍ المعالجة...');
+        setStatus('جارٍ تجهيز الصورة ورفعها إلى الخادم...', 'warn');
+        updateTimeStatus();
+
+        const canvas = els.processingCanvas;
+        const ctx = canvas.getContext('2d');
+        canvas.width = els.video.videoWidth;
+        canvas.height = els.video.videoHeight;
+        ctx.drawImage(els.video, 0, 0, canvas.width, canvas.height);
+        await blurFacesOnCanvas(canvas, ctx);
+        const rawBlob = await canvasToBlob(canvas, 0.92);
+        const hash = await sha256(rawBlob);
+
+        const deviceDate = new Date();
+        const { data: insertData, error: insertError } = await sb
+          .from(TABLE)
+          .insert({
+            phone: getSavedPhone(),
+            lat: currentLocation.lat,
+            lng: currentLocation.lng,
+            accuracy: currentLocation.accuracy,
+            device_time: deviceDate.toISOString(),
+            sha256: hash,
+            source: 'web',
+            version: APP_VERSION,
+            status: 'uploading'
+          })
+          .select()
+          .single();
+
+        if (insertError || !insertData) {
+          throw new Error(insertError?.message || 'تعذر إنشاء سجل التوثيق في قاعدة البيانات.');
+        }
+
+        const recordId = insertData.id;
+        const fileName = `${recordId}.jpg`;
+        const path = fileName;
+        const { error: uploadError } = await sb.storage.from(BUCKET).upload(path, rawBlob, {
+          contentType: 'image/jpeg',
+          cacheControl: '3600',
+          upsert: true
+        });
+
+        if (uploadError) throw new Error(uploadError.message || 'فشل رفع الصورة.');
+
+        const { data: publicData } = sb.storage.from(BUCKET).getPublicUrl(path);
+        const publicUrl = publicData.publicUrl;
+        const verifyUrl = `${location.origin}${location.pathname}?verify=${recordId}`;
+        latestVerificationUrl = verifyUrl;
+
+        const meta = {
+          date: deviceDate.toLocaleDateString('ar-SA'),
+          time: deviceDate.toLocaleTimeString('ar-SA'),
+          lat: currentLocation.lat,
+          lng: currentLocation.lng,
+          accuracy: currentLocation.accuracy,
+          serverTime: fmtDate(insertData.server_time),
+          recordId
+        };
+
+        let stamped;
+        try {
+          stamped = await createStampedImage(canvas, meta, verifyUrl);
+        } catch (qrErr) {
+          console.warn('QR generation failed, falling back without QR', qrErr);
+          const fallbackCanvas = document.createElement('canvas');
+          fallbackCanvas.width = canvas.width;
+          fallbackCanvas.height = canvas.height;
+          fallbackCanvas.getContext('2d').drawImage(canvas, 0, 0);
+          const fallbackBlob = await canvasToBlob(fallbackCanvas, 0.94);
+          stamped = { blob: fallbackBlob, canvas: fallbackCanvas };
+          setStatus('تم رفع الصورة، لكن تعذر إنشاء QR في هذا المتصفح. الرابط ما زال يعمل.', 'warn');
+        }
+        latestStampedBlob = stamped.blob;
+        latestStampedFileName = `proofcam-${recordId}.jpg`;
+
+        const { error: updateError } = await sb
+          .from(TABLE)
+          .update({
+            image_path: path,
+            image_url: publicUrl,
+            verify_url: verifyUrl,
+            status: 'ready'
+          })
+          .eq('id', recordId);
+
+        if (updateError) throw new Error(updateError.message || 'تم رفع الصورة لكن تعذر تحديث السجل.');
+
+        latestCaptureRecord = { id: recordId, image_url: publicUrl };
+
+        els.previewEmpty.classList.add('hidden');
+        els.previewImg.classList.add('hidden');
+        els.resultLinkText.innerHTML = `<a href="${verifyUrl}" target="_blank" rel="noopener">${verifyUrl}</a>`;
+        setStatus('تم إنشاء رابط التحقق بنجاح.', 'ok');
+        setCaptureStatus('تم الالتقاط بنجاح');
+      } catch (err) {
+        setStatus(err.message || 'حدث خطأ غير متوقع.', 'err');
+        setCaptureStatus('فشل الالتقاط');
+      }
+    }
+
+    async function shareLink() {
+      if (!latestVerificationUrl) return;
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: 'ProofCam Verification', text: 'رابط تحقق من ProofCam', url: latestVerificationUrl });
+          return;
+        } catch (_) {}
+      }
+      await navigator.clipboard.writeText(latestVerificationUrl);
+      setStatus('تم نسخ الرابط للحافظة.', 'ok');
+    }
+
+    async function copyLink() {
+      if (!latestVerificationUrl) return;
+      await navigator.clipboard.writeText(latestVerificationUrl);
+      setStatus('تم نسخ الرابط.', 'ok');
+    }
+
+    async function downloadBlob(blob, fileName) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 4000);
+    }
+
+    async function loadVerifyMode(recordId) {
+      show(els.verifyView);
+      els.modeBadge.textContent = 'وضع التحقق';
+      try {
+        const { data, error } = await sb.from(TABLE).select('*').eq('id', recordId).single();
+        if (error || !data) throw new Error('تعذر تحميل سجل التحقق.');
+        if (!data.image_url) throw new Error('الصورة غير متاحة في هذا السجل.');
+
+        els.verifyImage.src = data.image_url;
+        els.recordId.textContent = data.id;
+        els.serverTime.textContent = fmtDate(data.server_time);
+        els.deviceTime.textContent = fmtDate(data.device_time);
+        els.verifyCoords.textContent = `${Number(data.lat).toFixed(6)}, ${Number(data.lng).toFixed(6)}`;
+        els.verifyAccuracy.textContent = `±${Math.round(Number(data.accuracy || 0))} متر`;
+        els.trustScore.textContent = computeTrust(Number(data.accuracy || 999));
+        els.verifyAlert.className = 'alert ok';
+        els.verifyAlert.textContent = 'تم تحميل سجل التحقق بنجاح.';
+        try {
+          await drawQrToCanvas(els.verifyQr, location.href, 180);
+        } catch (qrErr) {
+          console.warn(qrErr);
+          els.verifyAlert.className = 'alert warn';
+          els.verifyAlert.textContent = 'تم تحميل السجل، لكن تعذر عرض QR في هذا المتصفح.';
+        }
+
+        els.verifyDownloadBtn.onclick = async () => {
+          const response = await fetch(data.image_url);
+          const blob = await response.blob();
+          await downloadBlob(blob, `proofcam-${data.id}.jpg`);
+        };
+
+        els.verifyShareBtn.onclick = async () => {
+          if (navigator.share) {
+            try {
+              await navigator.share({ title: 'ProofCam Verification', url: location.href });
+              return;
+            } catch (_) {}
+          }
+          await navigator.clipboard.writeText(location.href);
+          els.verifyAlert.className = 'alert ok';
+          els.verifyAlert.textContent = 'تم نسخ رابط التحقق.';
+        };
+      } catch (err) {
+        els.verifyAlert.className = 'alert err';
+        els.verifyAlert.textContent = err.message || 'فشل تحميل صفحة التحقق.';
+      }
+    }
+
+    function initCaptureMode() {
+      const phone = getSavedPhone();
+      if (!phone) {
+        show(els.loginView);
+        els.modeBadge.textContent = 'تسجيل الدخول';
+        return;
+      }
+      els.phoneDisplay.value = phone;
+      show(els.captureView);
+      els.modeBadge.textContent = 'وضع الالتقاط';
+      updateTimeStatus();
+      updateGeoUi();
+      purgeOldRecords();
+    }
+
+    function bindEvents() {
+      els.savePhoneBtn.addEventListener('click', () => {
+        const phone = els.phoneInput.value.trim();
+        if (!phone) return alert('اكتب رقم الجوال أولاً.');
+        savePhone(phone);
+        initCaptureMode();
+      });
+
+      els.logoutBtn.addEventListener('click', () => {
+        clearPhone();
+        location.href = location.pathname;
+      });
+
+      els.startCamBtn.addEventListener('click', async () => {
+        try {
+          await startCamera();
+        } catch (err) {
+          setStatus(err.message || 'تعذر تشغيل الكاميرا.', 'err');
+        }
+      });
+
+      els.refreshLocationBtn.addEventListener('click', async () => {
+        try {
+          setCaptureStatus('جاري تحسين دقة الموقع...');
+          await getAccurateLocation();
+          setCaptureStatus('الموقع جاهز');
+        } catch (err) {
+          setStatus(err.message || 'تعذر تحديد الموقع.', 'err');
+          setCaptureStatus('الموقع غير جاهز');
+        }
+      });
+
+      els.captureBtn.addEventListener('click', captureFlow);
+      els.shareLinkBtn.addEventListener('click', shareLink);
+      els.copyLinkBtn.addEventListener('click', copyLink);
+      els.downloadBtn.addEventListener('click', async () => {
+        if (!latestStampedBlob) return;
+        await downloadBlob(latestStampedBlob, latestStampedFileName || 'proofcam.jpg');
+      });
+    }
+
+    async function boot() {
+      bindEvents();
+      const params = new URLSearchParams(location.search);
+      const verifyId = params.get('verify');
+      if (verifyId) {
+        await loadVerifyMode(verifyId);
+      } else {
+        initCaptureMode();
+      }
+    }
+
+    boot();
+  </script>
+</body>
+</html>
